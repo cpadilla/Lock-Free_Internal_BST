@@ -1,3 +1,5 @@
+#pragma once
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
@@ -10,18 +12,6 @@
 
 #define K 2
 
-#define MAX_KEY 0x7FFFFFFF
-#define INF_R 0x0
-#define INF_S 0x1
-#define INF_T 0x7FFFFFFE
-#define KEY_MASK 0x80000000
-#define ADDRESS_MASK 15	
-
-#define NULL_BIT 8
-#define INJECT_BIT 4
-#define DELETE_BIT 2
-#define PROMOTE_BIT 1
-
 typedef enum {INJECTION, DISCOVERY, CLEANUP} Mode;
 typedef enum {SIMPLE, COMPLEX} Type;
 typedef enum {LEFT, RIGHT} Side;
@@ -31,6 +21,7 @@ typedef enum {DELETE_FLAG, PROMOTE_FLAG} Flag;
 // Node class containing a key, two child nodes (LEFT, RIGHT) and a boolean if it's ready to be replaced
 class Node
 {
+public:
     std::atomic<unsigned long> mKey;
     std::atomic<Node*> child[K];
     std::atomic<bool> readyToReplace;
@@ -38,20 +29,39 @@ class Node
 
 class Edge
 {
+public:
 	Node* parent;
 	Node* child;
 	Side which;
+
+    Edge() {
+
+    }
+
+    Edge(Node* parent, Node* child, Side which) {
+        this->parent = parent;
+        this->child = child;
+        this->which = which;
+    }
 };
 
 class SeekRecord
 {
+public:
 	Edge lastEdge;
 	Edge pLastEdge;
 	Edge injectionEdge;
+
+    SeekRecord(SeekRecord* s) {
+        this->lastEdge = Edge(s->lastEdge.parent, s->lastEdge.child, s->lastEdge.which);
+        this->pLastEdge = Edge(s->pLastEdge.parent, s->pLastEdge.child, s->pLastEdge.which);
+        this->injectionEdge = Edge(s->injectionEdge.parent, s->injectionEdge.child, s->injectionEdge.which);
+    }
 };
 
 class AnchorRecord
 {
+public:
 	Node* node;
 	unsigned long key;
 };
