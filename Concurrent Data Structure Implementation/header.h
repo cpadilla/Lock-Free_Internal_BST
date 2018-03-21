@@ -9,18 +9,19 @@
 #include<assert.h>
 #include<atomic>
 
-
 #define K 2
 
 typedef enum {INJECTION, DISCOVERY, CLEANUP} Mode;
 typedef enum {SIMPLE, COMPLEX} Type;
-typedef enum {LEFT, RIGHT} Side;
+typedef enum {LEFT=0, RIGHT=1} Side;
 typedef enum {DELETE_FLAG, PROMOTE_FLAG} Flag;
 
 
 // Node class containing a key, two child nodes (LEFT, RIGHT) and a boolean if it's ready to be replaced
 class Node
 {
+private:
+
 public:
     std::atomic<unsigned long> mKey;
     std::atomic<Node*> child[K];
@@ -68,6 +69,8 @@ public:
 
 class StateRecord
 {
+public:
+    int depth;
 	Edge targetEdge;
 	Edge pTargetEdge;
 	unsigned long targetKey;
@@ -79,8 +82,9 @@ class StateRecord
 	SeekRecord successorRecord;
 };
 
-struct tArgs
+class tArgs
 {
+public:
 	int tId;
 	unsigned long lseed;
 	unsigned long readCount;
@@ -102,7 +106,7 @@ struct tArgs
 	SeekRecord targetRecord;
 	SeekRecord pSeekRecord;
     // object to store information about process' own delete operation
-	StateRecord myState;	
+	StateRecord myState;
 	AnchorRecord anchorRecord;
 	AnchorRecord pAnchorRecord;
 	unsigned long seekRetries;
