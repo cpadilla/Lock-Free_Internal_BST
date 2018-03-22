@@ -1,3 +1,6 @@
+#pragma once
+
+#include "header.h"
 #include "bitManipulations.h"
 
 static bool CAS(Node* parent, int which, Node* oldChild, Node* newChild)

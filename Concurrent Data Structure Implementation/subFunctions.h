@@ -1,3 +1,5 @@
+#include "util.h"
+
 void seek(tArgs*, unsigned long, SeekRecord*);
 void initializeTypeAndUpdateMode(tArgs*, StateRecord*);
 void updateMode(tArgs*, StateRecord*);
