@@ -3,7 +3,7 @@
 void seek(tArgs*, unsigned long, SeekRecord*);
 void initializeTypeAndUpdateMode(tArgs*, StateRecord*);
 void updateMode(tArgs*, StateRecord*);
-// void inject(tArgs*, StateRecord*);
+void inject(tArgs*, StateRecord*);
 void findSmallest(tArgs*, Node*, SeekRecord*);
 void findAndMarkSuccessor(tArgs*, StateRecord*);
 void removeSuccessor(tArgs*, StateRecord*);
@@ -555,6 +555,58 @@ void updateMode(tArgs* t, StateRecord* state)
 			state->mode = DISCOVERY;
 		}
 	}
+	return;
+}
+
+void inject(tArgs* t, StateRecord* state)
+{
+	Node* parent;
+	Node* node;
+	Edge targetEdge;
+	int which;
+	bool result;
+	bool i;
+	bool d;
+	bool p;
+	Node* temp;
+	
+	targetEdge = state->targetEdge;
+	parent = targetEdge.parent;
+	node = targetEdge.child;
+	which = targetEdge.which;
+	
+	result = CAS(parent,which,node,setIFlag(node));
+	if(!result)
+	{
+		//unable to set the intention flag on the edge. help if needed
+		temp = parent->child[which];
+		i=isIFlagSet(temp);	d=isDFlagSet(temp);	p=isPFlagSet(temp);
+		
+		if(i)
+		{
+			helpTargetNode(t,&targetEdge,1);
+		}
+		else if(d)
+		{
+			helpTargetNode(t,&state->pTargetEdge,1);
+		}
+		else if(p)
+		{
+			helpSuccessorNode(t,&state->pTargetEdge,1);
+		}
+		return;
+	}
+	//mark the left edge for deletion
+	result = markChildEdge(t,state,LEFT);
+	if(!result)
+	{
+		return;
+	}
+	//mark the right edge for deletion
+	result = markChildEdge(t,state,RIGHT);
+	
+	//initialize the type and mode of the operation
+	initializeTypeAndUpdateMode(t,state);
 	return;
 }
 
