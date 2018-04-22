@@ -1,3 +1,6 @@
+#pragma once
+
+#include "header.h"
 #include "util.h"
 
 void seek(tArgs*, unsigned long, SeekRecord*);
@@ -11,10 +14,16 @@ bool cleanup(tArgs*, StateRecord*);
 bool markChildEdge(tArgs*, StateRecord*, bool);
 void helpTargetNode(tArgs*, Edge*, int);
 void helpSuccessorNode(tArgs*, Edge*, int);
+void createHeadNodes();
+void nodeCount();
+unsigned long size();
+bool isValidBST(Node* node, unsigned long min, unsigned long max);
+bool isValidTree();
 
 Node* R;
 Node* S;
 Node* T;
+unsigned long numOfNodes;
 
 void seek(tArgs* t, unsigned long key, SeekRecord* s)
 {
@@ -716,4 +725,51 @@ void helpSuccessorNode(tArgs* t, Edge* helpeeEdge, int depth)
 	// remove the successor node
 	removeSuccessor(t,state);
 	return;
+}
+
+void createHeadNodes()
+{
+	R = newLeafNode(INF_R);
+	R->child[RIGHT] = newLeafNode(INF_S);
+	S = R->child[RIGHT];
+	S->child[RIGHT] = newLeafNode[INF_T];
+	T = S->child[RIGHT];
+}
+
+void nodeCount()
+{
+	if (isNull(node)) {
+		return;
+	}
+	numOfNodes++;
+
+	nodeCount(node->child[LEFT]);
+	nodeCount(node->child[RIGHT]);
+}
+
+unsigned long size()
+{
+	numOfNodes=0;
+	nodeCount(T->child[LEFT]);
+	return numOfNodes;
+}
+
+bool isValidBST(Node* node, unsigned long min, unsigned long max)
+{
+	if(isNull(node))
+	{
+		return true;
+	}
+	Node* address = getAddress(node);
+	unsigned long nKey = getKey(address->mKey);
+	if(nKey > min && nKey < max && isValidBST(address->child[LEFT],min,nKey) && isValidBST(address->child[RIGHT],nKey,max))
+	{
+		return true;
+	}
+	return false;
+}
+
+bool isValidTree()
+{
+	return(isValidBST(T->child[LEFT], 0, MAX_KEY));
 }

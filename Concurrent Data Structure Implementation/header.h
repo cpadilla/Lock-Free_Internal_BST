@@ -1,6 +1,7 @@
 #pragma once
 
 #include<stdio.h>
+#include<pthread.h>
 #include<stdlib.h>
 #include<stdbool.h>
 #include<math.h>
@@ -15,7 +16,6 @@ typedef enum {INJECTION, DISCOVERY, CLEANUP} Mode;
 typedef enum {SIMPLE, COMPLEX} Type;
 typedef enum {LEFT=0, RIGHT=1} Side;
 typedef enum {DELETE_FLAG, PROMOTE_FLAG} Flag;
-
 
 // Node class containing a key, two child nodes (LEFT, RIGHT) and a boolean if it's ready to be replaced
 class Node
@@ -117,6 +117,6 @@ void createHeadNodes();
 bool search(struct tArgs*, unsigned long);
 bool insert(struct tArgs*, unsigned long);
 bool remove(struct tArgs*, unsigned long);
-unsigned long size();
+// unsigned long size();
 void printKeys();
 bool isValidTree();

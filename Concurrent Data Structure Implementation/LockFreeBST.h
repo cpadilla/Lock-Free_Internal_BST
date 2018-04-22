@@ -1,3 +1,5 @@
+#pragma once
+
 #include "header.h"
 #include "util.h"
 #include "subFunctions.h"
