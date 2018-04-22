@@ -17,6 +17,14 @@ typedef enum {SIMPLE, COMPLEX} Type;
 typedef enum {LEFT=0, RIGHT=1} Side;
 typedef enum {DELETE_FLAG, PROMOTE_FLAG} Flag;
 
+void createHeadNodes();
+bool search(struct tArgs*, unsigned long);
+bool insert(struct tArgs*, unsigned long);
+bool remove(struct tArgs*, unsigned long);
+// unsigned long size();
+void printKeys();
+bool isValidTree();
+
 // Node class containing a key, two child nodes (LEFT, RIGHT) and a boolean if it's ready to be replaced
 class Node
 {
@@ -35,16 +43,10 @@ public:
 	Node* child;
 	Side which;
 
-    Edge() {
-
-    }
-
-    Edge(Node* parent, Node* child, Side which) {
-        this->parent = parent;
-        this->child = child;
-        this->which = which;
-    }
+    Edge();
+    Edge(Node* parent, Node* child, Side which);
 };
+
 
 class SeekRecord
 {
@@ -53,12 +55,10 @@ public:
 	Edge pLastEdge;
 	Edge injectionEdge;
 
-    SeekRecord(SeekRecord* s) {
-        this->lastEdge = Edge(s->lastEdge.parent, s->lastEdge.child, s->lastEdge.which);
-        this->pLastEdge = Edge(s->pLastEdge.parent, s->pLastEdge.child, s->pLastEdge.which);
-        this->injectionEdge = Edge(s->injectionEdge.parent, s->injectionEdge.child, s->injectionEdge.which);
-    }
+    SeekRecord(SeekRecord* s);
 };
+
+
 
 class AnchorRecord
 {
@@ -113,10 +113,3 @@ public:
 	unsigned long seekLength;
 };
 
-void createHeadNodes();
-bool search(struct tArgs*, unsigned long);
-bool insert(struct tArgs*, unsigned long);
-bool remove(struct tArgs*, unsigned long);
-// unsigned long size();
-void printKeys();
-bool isValidTree();

@@ -190,7 +190,22 @@ int main(int argc, char **argv) {
   }
 	unsigned long totalOperations = totalReadCount + totalInsertCount + totalDeleteCount;
 	MOPS = totalOperations/(runTime.tv_sec*1000000.0);
-	printf("k%d;%d-%d-%d;%d;%ld;%ld;%ld;%ld;%ld;%ld;%ld;%ld;%.2f;%.2f\n",atoi(argv[6]),findPercent,(insertPercent-findPercent),(removePercent-insertPercent),NUM_OF_THREADS,size(),totalReadCount,totalInsertCount,totalDeleteCount,totalReadRetries,totalSeekRetries,totalInsertRetries,totalDeleteRetries,totalSeekLength*1.0/totalOperations,MOPS);
+	printf("maximumKeySize:%d\nfindPercent:%d\ninsertPercent:%d\nremovePercent:%d\nNUM_OF_THREADS:%d\nsize:%ld\ntotalReadCount:%ld\ntotalInsertCount:%ld\ntotalDeleteCount:%ld\ntotalReadRetries:%ld\ntotalSeekRetries:%ld\ntotalInsertRetries:%ld\ntotalDeleteRetries:%ld\nseekPercentage:%.2f\nMOPS:%.2f\n",
+        atoi(argv[6]),
+        findPercent,
+        (insertPercent-findPercent),
+        (removePercent-insertPercent),
+        NUM_OF_THREADS,
+        size(),
+        totalReadCount,
+        totalInsertCount,
+        totalDeleteCount,
+        totalReadRetries,
+        totalSeekRetries,
+        totalInsertRetries,
+        totalDeleteRetries,
+        totalSeekLength*1.0/totalOperations,
+        MOPS);
 	assert(isValidTree());
 	pthread_exit(NULL);
 }
