@@ -236,7 +236,8 @@ Node* S;
 Node* T;
 unsigned long numOfNodes;
 
-void seek(tArgs* t, unsigned long key, SeekRecord* s)
+TM_CALLABLE
+void seek(tArgs* t, unsigned long key TM_ARG, SeekRecord* s)
 {
 	AnchorRecord* pAnchorRecord;
 	AnchorRecord* anchorRecord;
@@ -281,14 +282,20 @@ void seek(tArgs* t, unsigned long key, SeekRecord* s)
 			temp = curr->child[which];
 			n=isNull(temp);	d=isDFlagSet(temp);	p=isPFlagSet(temp);	next=getAddress(temp);
 			//check for completion of the traversal
-			if(key == cKey || n)
+			TM_BEGIN(atomic){
+			if(TM_READ(key) == cKey || n)
 			{
-				//either key found or no next edge to follow. Stop the traversal
-				s->pLastEdge = pLastEdge;
-				s->lastEdge = lastEdge;
-				// populateEdge(&s->injectionEdge,curr,next,which);
-                s->injectionEdge = Edge(curr, next, which);
-				if(key == cKey)
+				// TM_BEGIN(atomic){
+					//either key found or no next edge to follow. Stop the traversal
+					s->pLastEdge = pLastEdge;
+					s->lastEdge = lastEdge;
+					// TM_WRITE(s->pLastEdge, TM_READ(pLastEdge));
+					// TM_WRITE(s->lastEdge, TM_READ(lastEdge));
+					// populateEdge(&s->injectionEdge,curr,next,which);
+					s->injectionEdge = Edge(curr, next, which);
+					// TM_WRITE(s->injectionEdge, TM_READ(Edge(curr, next, which)));
+				// }TM_END;
+				if(TM_READ(key) == cKey)
 				{
 					//key matches. So return
 					return;					
@@ -298,6 +305,7 @@ void seek(tArgs* t, unsigned long key, SeekRecord* s)
 					break;
 				}
 			}
+			}TM_END;
 			if(which == RIGHT)
 			{
 				//the next edge that will be traversed is a right edge. Keep track of the current node and its key
@@ -324,15 +332,20 @@ void seek(tArgs* t, unsigned long key, SeekRecord* s)
 			if(pAnchorRecord->node == anchorRecord->node && pAnchorRecord->key == anchorRecord->key)
 			{
 				//return the results of previous traversal
-                s = new SeekRecord(&t->pSeekRecord);
+				// TM_BEGIN(atomic){
+					s = new SeekRecord(&t->pSeekRecord);
+					// TM_WRITE(s, TM_READ(new SeekRecord(&t->pSeekRecord)));
+				// }TM_END;
 				return;
 			}
 		}
 		//store the results of the current traversal and restart
-        t->pSeekRecord = SeekRecord(s);
-		pAnchorRecord->node = anchorRecord->node;
-		pAnchorRecord->key = anchorRecord->key;
-		t->seekRetries++;
+			TM_BEGIN(atomic){
+				t->pSeekRecord = SeekRecord(TM_READ(s));
+			}TM_END;
+			pAnchorRecord->node = anchorRecord->node;
+			pAnchorRecord->key = anchorRecord->key;
+			t->seekRetries++;
 	}
 }
 
@@ -992,7 +1005,9 @@ bool search(tArgs* t, unsigned long key)
 	Node* node;
 	unsigned long nKey;
 	
-	seek(t,key,&t->targetRecord);
+	TM_BEGIN(atomic){
+	seek(t,key TM_PARAM,&t->targetRecord);
+	}TM_END;
 	node = t->targetRecord.lastEdge.child;
 	nKey = getKey(node->mKey);
 	if(nKey == key)
@@ -1007,7 +1022,8 @@ bool search(tArgs* t, unsigned long key)
 	}	
 }
 
-bool insert(tArgs* t, unsigned long key) {
+TM_CALLABLE
+bool insert(tArgs* t, unsigned long key TM_ARG) {
 	Node* node;
 	Node* newNode;
 	Node* address;
@@ -1018,23 +1034,31 @@ bool insert(tArgs* t, unsigned long key) {
 
 	while(true)
 	{
-		seek(t,key,&t->targetRecord);
+		TM_BEGIN(atomic){
+		seek(t,key TM_PARAM,&t->targetRecord);
+		}TM_END;
 		node = t->targetRecord.lastEdge.child;
 		nKey = getKey(node->mKey);
-		if(nKey == key)
+		TM_BEGIN(atomic){
+		if(nKey == TM_READ(key))
 		{
 			t->unsuccessfulInserts++;
 			return(false);
 		}
+		}TM_END;
 		
 		//create a new node and initialize its fields
 		if(!t->isNewNodeAvailable)
 		{
-			t->newNode = newLeafNode(key);
+			TM_BEGIN(atomic){
+			t->newNode = newLeafNode(TM_READ(key));
+			}TM_END;
 			t->isNewNodeAvailable = true;
 		}
 		newNode = t->newNode;
-		newNode->mKey = key;
+		TM_BEGIN(atomic){
+		newNode->mKey = TM_READ(key);
+		}TM_END;
 		which = t->targetRecord.injectionEdge.which;
 		address = t->targetRecord.injectionEdge.child;
 		result = CAS(node,which,setNull(address),newNode);
@@ -1058,7 +1082,8 @@ bool insert(tArgs* t, unsigned long key) {
 	}
 }
 
-bool remove(tArgs* t, unsigned long key)
+TM_CALLABLE
+bool remove(tArgs* t, unsigned long key TM_ARG)
 {
 	StateRecord* myState;
 	SeekRecord* targetRecord;
@@ -1070,14 +1095,18 @@ bool remove(tArgs* t, unsigned long key)
 	//initialize the state record
 	myState = &t->myState;
 	myState->depth = 0;
-	myState->targetKey = key;
-	myState->currentKey = key;
+	TM_BEGIN(atomic){
+	TM_WRITE(myState->targetKey, TM_READ(key));
+	TM_WRITE(myState->currentKey, TM_READ(key));
+	}TM_END;
 	myState->mode = INJECTION;
 	targetRecord = &t->targetRecord;
 	
 	while(true)
 	{
-		seek(t,myState->currentKey,targetRecord);
+		TM_BEGIN(atomic){
+		seek(t,myState->currentKey TM_PARAM,targetRecord);
+		}TM_END;
 		targetEdge = targetRecord->lastEdge;
 		pTargetEdge = targetRecord->pLastEdge;
 		nKey = getKey(targetEdge.child->mKey);
@@ -1191,11 +1220,15 @@ void *operateOnTree(void* targuments) {
         key = rand() % keyRange + 2; // randomly generage from keyRange + 2
 
         if (chooseOperation < findPercent) {
-            search(tData, key);
+			search(tData, key);
         } else if (chooseOperation < insertPercent) {
-            insert(tData, key);
+			TM_BEGIN(atomic){
+            insert(tData, key TM_PARAM);
+			}TM_END;
         } else {
-            remove(tData, key);
+			TM_BEGIN(atomic){
+            remove(tData, key TM_PARAM);
+			}TM_END;
         }
     }
 
@@ -1226,12 +1259,16 @@ void *operateOnTree(void* targuments) {
         else if (chooseOperation < insertPercent)
         {
             tData->insertCount++;
-            insert(tData, key);
+			TM_BEGIN(atomic){
+            insert(tData, key TM_PARAM);
+			}TM_END;
         }
         else
         {
             tData->deleteCount++;
-            remove(tData, key);
+			TM_BEGIN(atomic){
+            remove(tData, key TM_PARAM);
+			}TM_END;
         }
     }
 
@@ -1280,7 +1317,9 @@ int main(int argc, char **argv) {
 	
   while(initialInsertArgs->successfulInserts < keyRange/2) //populate the tree with 50% of keys
   {
-    insert(initialInsertArgs, (rand() % keyRange + 2));
+	TM_BEGIN(atomic){
+		insert(initialInsertArgs, (rand() % keyRange + 2) TM_PARAM);
+	}TM_END;
   }
   pthread_t threadArray[NUM_OF_THREADS];
   for(int i=0;i<NUM_OF_THREADS;i++)
